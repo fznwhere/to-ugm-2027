@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TO UGM 2027</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="assets/img/logo_ugm.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/img/logo_ugm.png">
     <meta name="theme-color" content="#0C1B2E">
 
@@ -430,13 +431,15 @@
 
     // --- HELPER KEAMANAN & TANGGAL ---
     function escapeHTML(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&')
-            .replace(/</g, '<')
-            .replace(/>/g, '>')
-            .replace(/"/g, '"')
-            .replace(/'/g, ''');
+        if (str === null || str === undefined) return '';
+        const map = {
+            '&': '\u0026amp;',
+            '<': '\u0026lt;',
+            '>': '\u0026gt;',
+            '"': '\u0026quot;',
+            "'": '\u0026#039;'
+        };
+        return String(str).replace(/[&<>"']/g, m => map[m]);
     }
 
     function getTimestamp(item) {
@@ -620,7 +623,6 @@
             }
 
             hpText.innerText = `H-${days} Menuju UTBK 2027`;
-            // Skala bar disesuaikan ke 180 hari (November 2026 -> Akhir April 2027)
             let percent = (days / 180) * 100;
             if (percent > 100) percent = 100;
             if (percent < 3) percent = 3;
@@ -669,7 +671,6 @@
         const bEl = document.getElementById('b_' + id);
         const kEl = document.getElementById('k_' + id);
         
-        // Bersihkan karakter selain angka (mencegah minus/huruf)
         bEl.value = bEl.value.replace(/[^0-9]/g, '');
         kEl.value = kEl.value.replace(/[^0-9]/g, '');
 
@@ -818,7 +819,6 @@
                 hasAnySubtest = true;
                 let percent = Math.round((totalBenar / totalSoal) * 100);
                 
-                // Zona Merah (0-40%), Zona Kuning (41-70%), Zona Biru (71-100%)
                 let color = '#ff4757'; 
                 let chibiImg = 'assets/img/score_bad.png'; 
                 if (percent > 70) { color = '#3742fa'; chibiImg = 'assets/img/score_good.png'; } 
