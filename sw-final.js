@@ -1,13 +1,15 @@
-const CACHE_NAME = 'to-ugm-v10.1.1.1.1.1.1'; // Versi dinaikkan agar cache diperbarui
+const CACHE_NAME = 'to-ugm-2027-v1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './assets/img/background.jpg',
   './assets/img/target_bg.png',
-  './assets/img/btn_settings.png', // Tetap disimpan karena dipakai di header
-  './assets/img/logo_ugm.png',     // Ikon aplikasi baru ditambahkan
+  './assets/img/btn_settings.png',
+  './assets/img/logo_ugm.png',
   './assets/img/icon_input.png',
+  './assets/img/icon_tren.png',
+  './assets/img/icon_rata.png',
   './assets/img/icon_history.png',
   './assets/img/icon_analysis.png',
   './assets/img/footer_scene.jpg',
@@ -18,6 +20,7 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
@@ -28,7 +31,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      return response || fetch(event.request).catch(() => caches.match('./index.html'));
     })
   );
 });
@@ -43,6 +46,6 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
