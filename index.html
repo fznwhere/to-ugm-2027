@@ -137,10 +137,11 @@
         input, select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--accent-gold); border-radius: 8px; box-sizing: border-box; background: rgba(0,0,0,0.4); color: var(--text-primary); font-family: var(--font-family); }
         input:focus, select:focus { outline: none; border-color: var(--accent-orange); background: rgba(0,0,0,0.7); }
         .manual-calc-box { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .col-header { display: grid; grid-template-columns: 1.5fr 1fr 1fr 0.8fr; gap: 5px; margin-bottom: 10px; font-size: 0.7em; color: var(--text-secondary); text-align: center; }
-        .score-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 0.8fr; align-items: center; gap: 5px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
-        .score-row input { text-align: center; background: rgba(0,0,0,0.3); border: none; margin-bottom: 0; }
-        .total-display { text-align: center; font-weight: 800; color: var(--text-primary); font-size: 1em; padding: 10px 0; }
+        .col-header { display: grid; grid-template-columns: 1.5fr 1fr 1fr 0.9fr; gap: 5px; margin-bottom: 10px; font-size: 0.7em; color: var(--text-secondary); text-align: center; }
+        .score-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 0.9fr; align-items: center; gap: 5px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+        .score-row input { text-align: center; background: rgba(0,0,0,0.3); border: none; margin-bottom: 0; padding: 10px 4px; }
+        .score-row input.total-input { background: rgba(212, 175, 55, 0.08); border: 1px dashed rgba(212, 175, 55, 0.45); color: var(--accent-gold); font-weight: 800; }
+        .score-row input.total-input:focus { border-style: solid; border-color: var(--accent-orange); background: rgba(0,0,0,0.6); }
         .btn-save { background: linear-gradient(45deg, var(--accent-orange), var(--accent-gold)); color: var(--bg-primary); border: none; padding: 14px; border-radius: 10px; font-weight: 800; width: 100%; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(230, 92, 74, 0.4); position: relative; z-index: 2; font-family: var(--font-family); }
         .btn-cancel { background: rgba(255,255,255,0.1); color: var(--text-secondary); width: 100%; padding: 12px; border-radius: 10px; margin-top: 10px; cursor: pointer; border: 1px solid var(--text-secondary); display: none; font-family: var(--font-family); }
 
@@ -231,7 +232,8 @@
             <div style="text-align:center; font-size:0.65em; color:var(--text-secondary); margin-top:2px;">*Isi ini saja jika tidak ada rincian subtes</div>
         </div>
         <div class="manual-calc-box">
-            <div style="font-size:0.8em; margin-bottom:10px; color:var(--text-secondary)">Isi Benar (B) & Kosong (K) - *Opsional</div>
+            <div style="font-size:0.8em; margin-bottom:4px; color:var(--text-secondary)">Isi Benar (B) & Kosong (K) - *Opsional</div>
+            <div style="font-size:0.68em; margin-bottom:10px; color:var(--accent-gold); opacity:0.85;">*Kolom TOTAL bisa diubah jika jumlah soal latihan berbeda</div>
             <div class="col-header">
                 <div style="text-align:left">SUBTES</div>
                 <div>B</div>
@@ -661,8 +663,7 @@
                 <div class="score-label">${s.label}</div>
                 <input type="tel" inputmode="numeric" id="b_${s.id}" placeholder="-" oninput="validateInput('${s.id}', 'b')">
                 <input type="tel" inputmode="numeric" id="k_${s.id}" placeholder="-" style="color:var(--accent-orange)" oninput="validateInput('${s.id}', 'k')">
-                <div class="total-display">${s.total}</div>
-                <input type="hidden" id="t_${s.id}" value="${s.total}">
+                <input type="tel" inputmode="numeric" class="total-input" id="t_${s.id}" value="${s.total}" oninput="validateInput('${s.id}', 't')" onblur="finalizeTotal('${s.id}', ${s.total})">
             </div>`;
         });
     }
@@ -670,18 +671,41 @@
     function validateInput(id, changedField) {
         const bEl = document.getElementById('b_' + id);
         const kEl = document.getElementById('k_' + id);
+        const tEl = document.getElementById('t_' + id);
         
         bEl.value = bEl.value.replace(/[^0-9]/g, '');
         kEl.value = kEl.value.replace(/[^0-9]/g, '');
+        tEl.value = tEl.value.replace(/[^0-9]/g, '');
 
         const b = parseInt(bEl.value, 10) || 0;
         const k = parseInt(kEl.value, 10) || 0;
-        const t = parseInt(document.getElementById('t_' + id).value, 10);
+        const tRaw = tEl.value;
 
+        if (changedField !== 't' && tRaw !== '') {
+            const t = parseInt(tRaw, 10) || 0;
+            if (t > 0 && (b + k > t)) {
+                alert(`Jumlah Benar + Kosong pada subtes ini tidak boleh melebihi ${t} soal!`);
+                if (changedField === 'k') kEl.value = '';
+                else bEl.value = '';
+            }
+        }
+    }
+
+    function finalizeTotal(id, defaultTotal) {
+        const tEl = document.getElementById('t_' + id);
+        const bEl = document.getElementById('b_' + id);
+        const kEl = document.getElementById('k_' + id);
+
+        let t = parseInt(tEl.value, 10);
+        if (isNaN(t) || t <= 0) {
+            t = defaultTotal;
+            tEl.value = defaultTotal;
+        }
+
+        const b = parseInt(bEl.value, 10) || 0;
+        const k = parseInt(kEl.value, 10) || 0;
         if (b + k > t) {
-            alert(`Jumlah Benar + Kosong pada subtes ini tidak boleh melebihi ${t} soal!`);
-            if (changedField === 'k') kEl.value = '';
-            else bEl.value = '';
+            alert(`Jumlah Benar + Kosong (${b + k}) melebihi total soal (${t})!`);
         }
     }
 
@@ -711,16 +735,19 @@
             const kRaw = document.getElementById('k_' + s.id).value.trim();
             if (bRaw === "" && kRaw === "") continue; 
 
+            const tRaw = document.getElementById('t_' + s.id).value.trim();
+            const customTotal = (tRaw !== "" && parseInt(tRaw, 10) > 0) ? parseInt(tRaw, 10) : s.total;
+
             const b = parseInt(bRaw, 10) || 0;
             const k = parseInt(kRaw, 10) || 0;
-            if (b + k > s.total) {
-                alert(`Total Benar + Kosong pada ${s.label} melebihi ${s.total} soal!`);
+            if (b + k > customTotal) {
+                alert(`Total Benar + Kosong pada ${s.label} melebihi ${customTotal} soal!`);
                 return;
             }
 
-            sub[s.id] = { b, k, t: s.total };
-            if (s.total > 0) {
-                totalRaw += (b / s.total) * 1000 * s.weight;
+            sub[s.id] = { b, k, t: customTotal };
+            if (customTotal > 0) {
+                totalRaw += (b / customTotal) * 1000 * s.weight;
                 maxW += 1000 * s.weight;
             }
         }
@@ -1024,12 +1051,23 @@
         document.getElementById('officialScore').value = item.officialScore || "";
         document.getElementById('btnSave').innerText = "UPDATE DATA";
         document.getElementById('btnCancel').style.display = 'block';
-        document.querySelectorAll('#scoreInputsContainer input[type="tel"]').forEach(i => i.value = "");
+        
+        document.querySelectorAll('#scoreInputsContainer input:not(.total-input)').forEach(i => i.value = "");
+        SUBTEST_CONFIG.forEach(s => {
+            const tEl = document.getElementById('t_' + s.id);
+            if (tEl) tEl.value = s.total;
+        });
+
         if (item.subtestScores) {
             for (let [k, v] of Object.entries(item.subtestScores)) {
                 let bEl = document.getElementById('b_' + k);
                 let kEl = document.getElementById('k_' + k);
-                if (bEl && kEl && v) { bEl.value = v.b; kEl.value = v.k; }
+                let tEl = document.getElementById('t_' + k);
+                if (bEl && kEl && v) { 
+                    bEl.value = v.b; 
+                    kEl.value = v.k; 
+                    if (tEl && v.t) tEl.value = v.t;
+                }
             }
         }
         document.getElementById('inputFormCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1038,7 +1076,11 @@
     function resetForm() {
         isEditing = false;
         document.getElementById('editId').value = "";
-        document.querySelectorAll('#scoreInputsContainer input[type="tel"]').forEach(i => i.value = "");
+        document.querySelectorAll('#scoreInputsContainer input:not(.total-input)').forEach(i => i.value = "");
+        SUBTEST_CONFIG.forEach(s => {
+            const tEl = document.getElementById('t_' + s.id);
+            if (tEl) tEl.value = s.total;
+        });
         document.getElementById('officialScore').value = "";
         document.getElementById('platform').value = "";
         document.getElementById('toName').value = "";
